@@ -6,6 +6,55 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import copy
 
+def count_zeros(model):
+    total_item_count = 0
+    total_zero_count = 0
+    layer_zero_count_dict = {}
+    layer_item_count_dict = {}
+    for num_params,_ in enumerate(model.parameters()):
+        layer_zero_count_dict[num_params] = 0
+        layer_item_count_dict[num_params] = 0
+    
+    for n, layer in enumerate(model.parameters()):
+        try:
+            for channel in layer:
+                for kernal_2d in channel:
+                    for kernal_1d in kernal_2d:
+                        for item in kernal_1d:
+                            if item.detach() == 0:
+                                layer_zero_count_dict[n] += 1
+                                total_zero_count += 1
+                            layer_item_count_dict[n] += 1
+                            total_item_count += 1
+        except TypeError:
+            # case where channel is a single valued tensor (bias)
+            try:
+                if channel.detach() == 0:
+                    layer_zero_count_dict[n] += 1
+                    total_zero_count += 1
+                layer_item_count_dict[n] += 1
+                total_item_count += 1
+            except RuntimeError:
+                # case where channel is a multi-valued tensor (bias)
+                for item in channel:
+                    if item.detach() == 0:
+                        layer_zero_count_dict[n] += 1
+                        total_zero_count += 1
+                    layer_item_count_dict[n] += 1
+                    total_item_count += 1
+    return total_zero_count, total_item_count, layer_zero_count_dict, layer_item_count_dict
+
+def percentage_pruned(original_model, pruned_model):
+    _, _, original_model_perlayer_zero_count_dict, layer_item_count_dict = count_zeros(original_model)
+    _, _, pruned_model_perlayer_zero_count_dict, _ = count_zeros(pruned_model)
+    pruned_perlayer_zero_count_dict = {}
+    percentage_pruned_perlayer_dict = {}
+    for n, layer in enumerate(original_model_perlayer_zero_count_dict):
+        key_name = f"layer {n}"
+        pruned_perlayer_zero_count_dict[n] = pruned_model_perlayer_zero_count_dict[n] - original_model_perlayer_zero_count_dict[n] 
+        percentage_pruned_perlayer_dict[key_name] = (pruned_perlayer_zero_count_dict[n]/layer_item_count_dict[n])*100
+    return percentage_pruned_perlayer_dict
+
 def get_topk(pred_batch, label_batch, k=1):
     num_correct=0
     batch_size = label_batch.shape[0]
