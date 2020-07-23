@@ -46,14 +46,15 @@ def count_zeros(model):
 
 def percentage_pruned(original_model, pruned_model):
     _, _, original_model_perlayer_zero_count_dict, layer_item_count_dict = count_zeros(original_model)
-    _, _, pruned_model_perlayer_zero_count_dict, _ = count_zeros(pruned_model)
+    total_zero_count, total_item_count, pruned_model_perlayer_zero_count_dict, _ = count_zeros(pruned_model)
+    total_percentage_pruned = (total_zero_count*100)/total_item_count
     pruned_perlayer_zero_count_dict = {}
     percentage_pruned_perlayer_dict = {}
     for n, layer in enumerate(original_model_perlayer_zero_count_dict):
         key_name = f"layer {n}"
         pruned_perlayer_zero_count_dict[n] = pruned_model_perlayer_zero_count_dict[n] - original_model_perlayer_zero_count_dict[n] 
         percentage_pruned_perlayer_dict[key_name] = (pruned_perlayer_zero_count_dict[n]/layer_item_count_dict[n])*100
-    return percentage_pruned_perlayer_dict
+    return percentage_pruned_perlayer_dict, total_percentage_pruned
 
 def get_topk(pred_batch, label_batch, k=1):
     num_correct=0
