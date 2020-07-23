@@ -6,6 +6,19 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import copy
 
+def get_topk(pred_batch, label_batch, k=1):
+    num_correct=0
+    batch_size = label_batch.shape[0]
+    for datapoint in range(batch_size):
+        pred = pred_batch[datapoint]
+        _, topk_idx = torch.topk(pred, k)
+        label = label_batch[datapoint]
+        for idx in topk_idx:
+            if int(idx) == int(label):
+                num_correct+=1
+                break
+    return num_correct
+
 #ANCHOR Print table of zeros and non-zeros count
 def print_nonzeros(model):
     nonzero = total = 0
