@@ -18,6 +18,7 @@ import torchvision.utils as vutils
 import seaborn as sns
 import torch.nn.init as init
 import pickle
+import wandb
 
 # Custom Libraries
 import utils
@@ -88,6 +89,7 @@ def main(args, ITE=0):
     model.apply(weight_init)
 
     # Copying and Saving Initial State
+    net = copy.deepcopy(model)
     initial_state_dict = copy.deepcopy(model.state_dict())
     utils.checkdir(f"{os.getcwd()}/saves/{args.arch_type}/{args.dataset}/")
     torch.save(model, f"{os.getcwd()}/saves/{args.arch_type}/{args.dataset}/initial_state_dict_{args.prune_type}.pth.tar")
@@ -107,12 +109,14 @@ def main(args, ITE=0):
     # NOTE First Pruning Iteration is of No Compression
     bestacc = 0.0
     best_accuracy = 0
+    best_topk_accuracy = 0
     ITERATION = args.prune_iterations
     comp = np.zeros(ITERATION,float)
     bestacc = np.zeros(ITERATION,float)
     step = 0
     all_loss = np.zeros(args.end_iter,float)
     all_accuracy = np.zeros(args.end_iter,float)
+    topk_name = f'top{args.topk} accuracy'
 
 
     for _ite in range(args.start_iter, ITERATION):
@@ -156,23 +160,34 @@ def main(args, ITE=0):
 
             # Frequency for Testing
             if iter_ % args.valid_freq == 0:
-                accuracy = test(model, test_loader, criterion)
+                accuracy, topk_accuracy = test(model, test_loader, criterion)
+                wandb.log({'accuracy':accuracy, topk_name:topk_accuracy})
 
                 # Save Weights
                 if accuracy > best_accuracy:
                     best_accuracy = accuracy
                     utils.checkdir(f"{os.getcwd()}/saves/{args.arch_type}/{args.dataset}/")
                     torch.save(model,f"{os.getcwd()}/saves/{args.arch_type}/{args.dataset}/{_ite}_model_{args.prune_type}.pth.tar")
+                    
+                # Record best topk accuracy
+                if topk_accuracy > best_topk_accuracy:
+                    best_topk_accuracy = topk_accuracy
+                    print(f'New best top{args.topk} accuracy: {topk_accuracy}%')
 
             # Training
             loss = train(model, train_loader, optimizer, criterion)
+            wandb.log({'loss':loss})
             all_loss[iter_] = loss
             all_accuracy[iter_] = accuracy
             
             # Frequency for Printing Accuracy and Loss
             if iter_ % args.print_freq == 0:
                 pbar.set_description(
-                    f'Train Epoch: {iter_}/{args.end_iter} Loss: {loss:.6f} Accuracy: {accuracy:.2f}% Best Accuracy: {best_accuracy:.2f}%')       
+                    f'Train Epoch: {iter_}/{args.end_iter} Loss: {loss:.6f} Accuracy: {accuracy:.2f}% Best Accuracy: {best_accuracy:.2f}%')   
+                
+        percentage_pruned_dict, total_percentage_pruned = percentage_pruned(net, model)
+        print(f'Total percentage pruned: {total_percentage_pruned}%')
+        wandb.log(percentage_snipped_dict)
 
         writer.add_scalar('Accuracy/test', best_accuracy, comp1)
         bestacc[_ite]=best_accuracy
@@ -254,16 +269,19 @@ def test(model, test_loader, criterion):
     model.eval()
     test_loss = 0
     correct = 0
+    num_correct_k = 0
     with torch.no_grad():
         for data, target in test_loader:
             data, target = data.to(device), target.to(device)
             output = model(data)
+            num_correct_k += get_topk(ouput, target, k=args.topk)
             test_loss += F.nll_loss(output, target, reduction='sum').item()  # sum up batch loss
             pred = output.data.max(1, keepdim=True)[1]  # get the index of the max log-probability
             correct += pred.eq(target.data.view_as(pred)).sum().item()
         test_loss /= len(test_loader.dataset)
         accuracy = 100. * correct / len(test_loader.dataset)
-    return accuracy
+        topk_acc = 100. * num_correct_k / len(test_loader.dataset)
+    return accuracy, topk_acc
 
 # Prune by Percentile module
 def prune_by_percentile(percent, resample=False, reinit=False,**kwargs):
@@ -410,6 +428,7 @@ if __name__=="__main__":
     parser.add_argument("--arch_type", default="fc1", type=str, help="fc1 | lenet5 | alexnet | vgg16 | resnet18 | densenet121")
     parser.add_argument("--prune_percent", default=10, type=int, help="Pruning percent")
     parser.add_argument("--prune_iterations", default=35, type=int, help="Pruning iterations count")
+    parser.add_argument("--topk", default=5, type=int, help="Top k accuracy")
 
     
     args = parser.parse_args()
