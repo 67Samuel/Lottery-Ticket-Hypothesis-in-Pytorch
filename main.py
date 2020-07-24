@@ -117,9 +117,18 @@ def main(args, ITE=0):
     all_loss = np.zeros(args.end_iter,float)
     all_accuracy = np.zeros(args.end_iter,float)
     topk_name = f'top{args.topk} accuracy'
-
+    
+    if args.early_stopping:
+        early_stopper = EarlyStopping(patience=args.esp)
+        late_early_stopping=False
 
     for _ite in range(args.start_iter, ITERATION):
+        if args.early_stopping:
+            if (early_stopper.early_stop == True):
+                break
+            if late_early_stopping:
+                if (late_early_stopper.early_stop == True):
+                    break
         if not _ite == 0:
             prune_by_percentile(args.prune_percent, resample=resample, reinit=reinit)
             if reinit:
@@ -160,7 +169,7 @@ def main(args, ITE=0):
 
             # Frequency for Testing
             if iter_ % args.valid_freq == 0:
-                accuracy, topk_accuracy = test(model, test_loader, criterion)
+                accuracy, val_loss, topk_accuracy = test(model, test_loader, criterion)
                 wandb.log({'accuracy':accuracy, topk_name:topk_accuracy})
 
                 # Save Weights
@@ -173,6 +182,19 @@ def main(args, ITE=0):
                 if topk_accuracy > best_topk_accuracy:
                     best_topk_accuracy = topk_accuracy
                     print(f'New best top{args.topk} accuracy: {topk_accuracy}%')
+                    
+                # Call early stopper
+                if args.early_stopping:
+                    early_stopper(val_loss=val_loss, model=model)
+                    if early_stopper.early_stop == True:
+                        break
+                    if late_early_stopping:
+                        late_early_stopper(val_loss=val_loss, model=model)
+                        if late_early_stopper.early_stop == True:
+                            break
+                if (val_loss < args.lesv) and (late_early_stopping==False):
+                    late_early_stopper = EarlyStopping(patience=args.late_early_stop)
+                    late_early_stopping = True
 
             # Training
             loss = train(model, train_loader, optimizer, criterion)
@@ -270,6 +292,7 @@ def test(model, test_loader, criterion):
     test_loss = 0
     correct = 0
     num_correct_k = 0
+    n_batches = len(test_loader)
     with torch.no_grad():
         for data, target in test_loader:
             data, target = data.to(device), target.to(device)
@@ -281,7 +304,8 @@ def test(model, test_loader, criterion):
         test_loss /= len(test_loader.dataset)
         accuracy = 100. * correct / len(test_loader.dataset)
         topk_acc = 100. * num_correct_k / len(test_loader.dataset)
-    return accuracy, topk_acc
+    val_loss = test_loss/n_batches
+    return accuracy, val_loss, topk_acc
 
 # Prune by Percentile module
 def prune_by_percentile(percent, resample=False, reinit=False,**kwargs):
@@ -429,6 +453,10 @@ if __name__=="__main__":
     parser.add_argument("--prune_percent", default=10, type=int, help="Pruning percent")
     parser.add_argument("--prune_iterations", default=35, type=int, help="Pruning iterations count")
     parser.add_argument("--topk", default=5, type=int, help="Top k accuracy")
+    parser.add_argument('--early-stopping', action='store_false',  default=True, help='use early stopping (default: True)') 
+    parser.add_argument('--lesv', default=1.0, type=float, help='late early stopping value; the value below which to add the late early stopper (default: 1.0)')
+    parser.add_argument('--late-early-stop', default=3, type=int, help='patience of early stopper that activates when loss<args.lesv (default: 3)')
+    parser.add_argument('--esp', default=5, type=int, help='patience for early stopping (default: 5)')  
 
     
     args = parser.parse_args()
