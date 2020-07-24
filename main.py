@@ -31,6 +31,9 @@ sns.set_style('darkgrid')
 
 # Main
 def main(args, ITE=0):
+    
+    wandb.init(entity="67Samuel", project='Lottery Ticket', name='test')
+    
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     reinit = True if args.prune_type=="reinit" else False
 
@@ -165,6 +168,7 @@ def main(args, ITE=0):
         comp[_ite] = comp1
         pbar = tqdm(range(args.end_iter))
 
+        wandb.log({'prune percent':args.prune_percent, 'prune iterations':args.prune_iterations})
         for iter_ in pbar:
 
             # Frequency for Testing
@@ -453,9 +457,9 @@ if __name__=="__main__":
     parser.add_argument("--prune_percent", default=10, type=int, help="Pruning percent")
     parser.add_argument("--prune_iterations", default=35, type=int, help="Pruning iterations count")
     parser.add_argument("--topk", default=5, type=int, help="Top k accuracy")
-    parser.add_argument('--early-stopping', action='store_false',  default=True, help='use early stopping (default: True)') 
+    parser.add_argument('--early_stopping', action='store_false',  default=True, help='use early stopping (default: True)') 
     parser.add_argument('--lesv', default=1.0, type=float, help='late early stopping value; the value below which to add the late early stopper (default: 1.0)')
-    parser.add_argument('--late-early-stop', default=3, type=int, help='patience of early stopper that activates when loss<args.lesv (default: 3)')
+    parser.add_argument('--late_early_stop', default=3, type=int, help='patience of early stopper that activates when loss<args.lesv (default: 3)')
     parser.add_argument('--esp', default=5, type=int, help='patience for early stopping (default: 5)')  
 
     
