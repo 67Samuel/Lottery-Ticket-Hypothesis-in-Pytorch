@@ -116,7 +116,7 @@ def main(args, ITE=0):
     step = 0
     all_loss = np.zeros(args.end_iter,float)
     all_accuracy = np.zeros(args.end_iter,float)
-    topk_name = f'top{args.topk} accuracy'
+    topk_name = f'top{args.topk} acc (%)'
     
     if args.early_stopping:
         early_stopper = EarlyStopping(patience=args.esp)
@@ -170,7 +170,7 @@ def main(args, ITE=0):
             # Frequency for Testing
             if iter_ % args.valid_freq == 0:
                 accuracy, val_loss, topk_accuracy = test(model, test_loader, criterion)
-                wandb.log({'accuracy':accuracy, topk_name:topk_accuracy})
+                wandb.log({'top1 acc (%)':accuracy, topk_name:topk_accuracy})
 
                 # Save Weights
                 if accuracy > best_accuracy:
@@ -198,7 +198,7 @@ def main(args, ITE=0):
 
             # Training
             loss = train(model, train_loader, optimizer, criterion)
-            wandb.log({'loss':loss})
+            wandb.log({'loss':loss, 'epochs':iter_})
             all_loss[iter_] = loss
             all_accuracy[iter_] = accuracy
             
