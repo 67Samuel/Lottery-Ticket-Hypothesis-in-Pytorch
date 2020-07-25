@@ -4,7 +4,7 @@ import copy
 import os
 import sys
 import numpy as np
-#from tqdm import tqdm
+from tqdm import tqdm
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -167,8 +167,8 @@ def main(args, ITE=0):
         # Print the table of Nonzeros in each layer
         comp1 = utils.print_nonzeros(model)
         comp[_ite] = comp1
-        #pbar = tqdm(range(args.end_iter))
-        pbar = range(args.end_iter)
+        pbar = tqdm(range(args.end_iter))
+        #pbar = range(args.end_iter)
 
         wandb.log({'prune percent':args.prune_percent, 'prune iterations':args.prune_iterations})
         for iter_ in pbar:
