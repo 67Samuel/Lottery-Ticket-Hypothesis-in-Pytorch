@@ -21,7 +21,7 @@ import pickle
 import wandb
 
 # Custom Libraries
-import utils
+from utils import *
 
 # Tensorboard initialization
 #writer = SummaryWriter()
@@ -264,8 +264,8 @@ def main(args, ITE=0):
     plt.grid(color="gray") 
     utils.checkdir(f"{os.getcwd()}/plots/lt/{args.arch_type}/{args.dataset}/")
     plt.savefig(f"{os.getcwd()}/plots/lt/{args.arch_type}/{args.dataset}/{args.prune_type}_AccuracyVsWeights.png", dpi=1200) 
-    plt.close()                    
-   
+    plt.close()    
+    
 # Function for Training
 def train(model, train_loader, optimizer, criterion):
     EPS = 1e-6
