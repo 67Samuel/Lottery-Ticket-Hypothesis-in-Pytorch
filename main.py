@@ -215,7 +215,7 @@ def main(args, ITE=0):
         print(f'Total percentage pruned: {total_percentage_pruned}%')
         wandb.log(percentage_snipped_dict)
 
-        writer.add_scalar('Accuracy/test', best_accuracy, comp1)
+        #writer.add_scalar('Accuracy/test', best_accuracy, comp1)
         bestacc[_ite]=best_accuracy
 
         # Plotting Loss (Training), Accuracy (Testing), Iteration Curve
