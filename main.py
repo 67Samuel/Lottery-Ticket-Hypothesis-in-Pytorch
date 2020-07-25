@@ -124,15 +124,15 @@ def main(args, ITE=0):
     
     if args.early_stopping:
         early_stopper = EarlyStopping(patience=args.esp)
-        late_early_stopping=False
+        #late_early_stopping=False
 
     for _ite in range(args.start_iter, ITERATION):
         if args.early_stopping:
             if (early_stopper.early_stop == True):
                 break
-            if late_early_stopping:
-                if (late_early_stopper.early_stop == True):
-                    break
+            #if late_early_stopping:
+            #    if (late_early_stopper.early_stop == True):
+            #        break
         if not _ite == 0:
             prune_by_percentile(args.prune_percent, resample=resample, reinit=reinit)
             if reinit:
@@ -194,14 +194,14 @@ def main(args, ITE=0):
                     early_stopper(val_loss=val_loss, model=model)
                     if early_stopper.early_stop == True:
                         break
-                    if late_early_stopping:
-                        late_early_stopper(val_loss=val_loss, model=model)
-                        if late_early_stopper.early_stop == True:
-                            break
-                if (val_loss < args.lesv) and (late_early_stopping==False):
-                    late_early_stopper = EarlyStopping(patience=args.late_early_stop)
-                    late_early_stopping = True
-                    print('late early stopper activated')
+                    #if late_early_stopping:
+                    #    late_early_stopper(val_loss=val_loss, model=model)
+                    #    if late_early_stopper.early_stop == True:
+                    #        break
+                #if (val_loss < args.lesv) and (late_early_stopping==False):
+                #    late_early_stopper = EarlyStopping(patience=args.late_early_stop)
+                #    late_early_stopping = True
+                #    print('late early stopper activated')
 
             # Training
             loss = train(model, train_loader, optimizer, criterion)
