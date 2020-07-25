@@ -22,6 +22,7 @@ import wandb
 
 # Custom Libraries
 import utils
+from utils import count_zeros, percentage_pruned, get_topk
 
 # Tensorboard initialization
 #writer = SummaryWriter()
