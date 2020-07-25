@@ -4,7 +4,7 @@ import copy
 import os
 import sys
 import numpy as np
-from tqdm import tqdm
+#from tqdm import tqdm
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -167,7 +167,8 @@ def main(args, ITE=0):
         # Print the table of Nonzeros in each layer
         comp1 = utils.print_nonzeros(model)
         comp[_ite] = comp1
-        pbar = tqdm(range(args.end_iter))
+        #pbar = tqdm(range(args.end_iter))
+        pbar = range(args.end_iter)
 
         wandb.log({'prune percent':args.prune_percent, 'prune iterations':args.prune_iterations})
         for iter_ in pbar:
@@ -175,7 +176,7 @@ def main(args, ITE=0):
             # Frequency for Testing
             if iter_ % args.valid_freq == 0:
                 accuracy, val_loss, topk_accuracy = test(model, test_loader, criterion)
-                wandb.log({'top1 acc (%)':accuracy, topk_name:topk_accuracy})
+                wandb.log({'top1 acc (%)':accuracy, topk_name:topk_accuracy, 'val loss':val_loss})
 
                 # Save Weights
                 if accuracy > best_accuracy:
@@ -200,6 +201,7 @@ def main(args, ITE=0):
                 if (val_loss < args.lesv) and (late_early_stopping==False):
                     late_early_stopper = EarlyStopping(patience=args.late_early_stop)
                     late_early_stopping = True
+                    print('late early stopper activated')
 
             # Training
             loss = train(model, train_loader, optimizer, criterion)
@@ -214,7 +216,7 @@ def main(args, ITE=0):
                 
         percentage_pruned_dict, total_percentage_pruned = percentage_pruned(net, model)
         print(f'Total percentage pruned: {total_percentage_pruned}%')
-        wandb.log(percentage_snipped_dict)
+        wandb.log(percentage_pruned_dict)
 
         #writer.add_scalar('Accuracy/test', best_accuracy, comp1)
         bestacc[_ite]=best_accuracy
@@ -347,7 +349,6 @@ def test(model, test_loader, criterion):
     test_loss = 0
     correct = 0
     num_correct_k = 0
-    n_batches = len(test_loader)
     with torch.no_grad():
         for data, target in test_loader:
             data, target = data.to(device), target.to(device)
@@ -359,8 +360,7 @@ def test(model, test_loader, criterion):
         test_loss /= len(test_loader.dataset)
         accuracy = 100. * correct / len(test_loader.dataset)
         topk_acc = 100. * num_correct_k / len(test_loader.dataset)
-    val_loss = test_loss/n_batches
-    return accuracy, val_loss, topk_acc
+    return accuracy, test_loss, topk_acc
 
 # Prune by Percentile module
 def prune_by_percentile(percent, resample=False, reinit=False,**kwargs):
