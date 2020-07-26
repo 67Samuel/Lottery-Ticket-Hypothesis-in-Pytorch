@@ -33,7 +33,7 @@ sns.set_style('darkgrid')
 # Main
 def main(args, ITE=0):
     
-    wandb.init(entity="67Samuel", project='Lottery Ticket', name='test')
+    wandb.init(entity="67Samuel", project='Lottery Ticket', name=args.run_name)
     
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     reinit = True if args.prune_type=="reinit" else False
@@ -512,6 +512,7 @@ if __name__=="__main__":
     parser.add_argument('--lesv', default=1.0, type=float, help='late early stopping value; the value below which to add the late early stopper (default: 1.0)')
     parser.add_argument('--late_early_stop', default=3, type=int, help='patience of early stopper that activates when loss<args.lesv (default: 3)')
     parser.add_argument('--esp', default=5, type=int, help='patience for early stopping (default: 5)')  
+    parser.add_argument('--run_name', default='test', type=str, help='name of the run, recorded in wandb (default: test)')  
 
     
     args = parser.parse_args()
