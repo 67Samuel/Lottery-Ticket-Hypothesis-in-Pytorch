@@ -190,18 +190,19 @@ def main(args, ITE=0):
                     print(f'New best top{args.topk} accuracy: {topk_accuracy}%')
                     
                 # Call early stopper
-                if args.early_stopping:
-                    early_stopper(val_loss=val_loss, model=model)
-                    if early_stopper.early_stop == True:
-                        break
-                    #if late_early_stopping:
-                    #    late_early_stopper(val_loss=val_loss, model=model)
-                    #    if late_early_stopper.early_stop == True:
-                    #        break
-                #if (val_loss < args.lesv) and (late_early_stopping==False):
-                #    late_early_stopper = EarlyStopping(patience=args.late_early_stop)
-                #    late_early_stopping = True
-                #    print('late early stopper activated')
+                if best_accuracy > 30:
+                    if args.early_stopping:
+                        early_stopper(val_loss=val_loss, model=model)
+                        if early_stopper.early_stop == True:
+                            break
+                        #if late_early_stopping:
+                        #    late_early_stopper(val_loss=val_loss, model=model)
+                        #    if late_early_stopper.early_stop == True:
+                        #        break
+                    #if (val_loss < args.lesv) and (late_early_stopping==False):
+                    #    late_early_stopper = EarlyStopping(patience=args.late_early_stop)
+                    #    late_early_stopping = True
+                    #    print('late early stopper activated')
 
             # Training
             loss = train(model, train_loader, optimizer, criterion)
@@ -494,7 +495,7 @@ if __name__=="__main__":
     
     # Arguement Parser
     parser = argparse.ArgumentParser()
-    parser.add_argument("--lr",default= 1.2e-3, type=float, help="Learning rate")
+    parser.add_argument("--lr",default= 1e-3, type=float, help="Learning rate")
     parser.add_argument("--batch_size", default=60, type=int)
     parser.add_argument("--start_iter", default=0, type=int)
     parser.add_argument("--end_iter", default=100, type=int)
