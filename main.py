@@ -108,6 +108,20 @@ def main(args, ITE=0):
     # Layer Looper
     for name, param in model.named_parameters():
         print(name, param.size())
+        
+    # multi GPU
+    if args.multi_gpu:
+        if torch.cuda.device_count() > 1:
+            try:
+                ls = []
+                for gpu_idx in args.multi_gpu_selection:
+                    ls.append(int(gpu_idx))
+                gpu_ids = ls
+                print("--info--: there are ", torch.cuda.device_count(), "GPUs. Activate GPUs: ", gpu_ids)
+                model = nn.DataParallel(model, device_ids=gpu_ids)
+                print('data parallel initiated')
+            except Exception as e:
+                print(e)
 
     # Pruning
     # NOTE First Pruning Iteration is of No Compression
@@ -514,6 +528,8 @@ if __name__=="__main__":
     parser.add_argument('--late_early_stop', default=3, type=int, help='patience of early stopper that activates when loss<args.lesv (default: 3)')
     parser.add_argument('--esp', default=5, type=int, help='patience for early stopping (default: 5)')  
     parser.add_argument('--run_name', default='test', type=str, help='name of the run, recorded in wandb (default: test)')  
+    parser.add_argument('--multi_gpu_selection', default='02', type=str, help='indicate which gpus to use. 02 means 0 and 2. (default: 02)')
+    parser.add_argument('--multi_gpu', action='store_true', default=False, help='use multiple GPUs to train (default: False)')
 
     
     args = parser.parse_args()
