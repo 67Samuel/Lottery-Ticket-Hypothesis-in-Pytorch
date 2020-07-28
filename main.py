@@ -4,7 +4,6 @@ import copy
 import os
 import sys
 import numpy as np
-from tqdm import tqdm
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -33,7 +32,7 @@ sns.set_style('darkgrid')
 # Main
 def main(args, ITE=0):
     
-    wandb.init(entity="67Samuel", project='Lottery Ticket', name=args.run_name)
+    wandb.init(entity="67Samuel", project='Lottery Ticket', name=args.run_name, config={'batch size':args.batch_size, 'lr':args.lr, 'epochs':args.end_iter})
     
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     reinit = True if args.prune_type=="reinit" else False
@@ -181,8 +180,11 @@ def main(args, ITE=0):
         # Print the table of Nonzeros in each layer
         comp1 = utils.print_nonzeros(model)
         comp[_ite] = comp1
-        pbar = tqdm(range(args.end_iter))
-        #pbar = range(args.end_iter)
+        if args.tqdm:
+            from tqdm import tqdm
+            pbar = tqdm(range(args.end_iter))
+        else:
+            pbar = range(args.end_iter)
 
         wandb.log({'prune percent':args.prune_percent, 'prune iterations':args.prune_iterations})
         for iter_ in pbar:
@@ -379,29 +381,29 @@ def test(model, test_loader, criterion):
 
 # Prune by Percentile module
 def prune_by_percentile(percent, resample=False, reinit=False,**kwargs):
-        global step
-        global mask
-        global model
+    global step
+    global mask
+    global model
 
-        # Calculate percentile value
-        step = 0
-        for name, param in model.named_parameters():
+    # Calculate percentile value
+    step = 0
+    for name, param in model.named_parameters():
 
-            # We do not prune bias term
-            if 'weight' in name:
-                tensor = param.data.cpu().numpy()
-                alive = tensor[np.nonzero(tensor)] # flattened array of nonzero values
-                percentile_value = np.percentile(abs(alive), percent)
+        # We do not prune bias term
+        if 'weight' in name:
+            tensor = param.data.cpu().numpy()
+            alive = tensor[np.nonzero(tensor)] # flattened array of nonzero values
+            percentile_value = np.percentile(abs(alive), percent)
 
-                # Convert Tensors to numpy and calculate
-                weight_dev = param.device
-                new_mask = np.where(abs(tensor) < percentile_value, 0, mask[step])
+            # Convert Tensors to numpy and calculate
+            weight_dev = param.device
+            new_mask = np.where(abs(tensor) < percentile_value, 0, mask[step])
                 
-                # Apply new weight and mask
-                param.data = torch.from_numpy(tensor * new_mask).to(weight_dev)
-                mask[step] = new_mask
-                step += 1
-        step = 0
+            # Apply new weight and mask
+            param.data = torch.from_numpy(tensor * new_mask).to(weight_dev)
+            mask[step] = new_mask
+            step += 1
+    step = 0
 
 # Function to make an empty mask of the same size as the model
 def make_mask(model):
@@ -530,6 +532,7 @@ if __name__=="__main__":
     parser.add_argument('--run_name', default='test', type=str, help='name of the run, recorded in wandb (default: test)')  
     parser.add_argument('--multi_gpu_selection', default='02', type=str, help='indicate which gpus to use. 02 means 0 and 2. (default: 02)')
     parser.add_argument('--multi_gpu', action='store_true', default=False, help='use multiple GPUs to train (default: False)')
+    parser.add_argument('--tqdm', action='store_true', default=False, help='use tqdm (default: False)')
 
     
     args = parser.parse_args()
