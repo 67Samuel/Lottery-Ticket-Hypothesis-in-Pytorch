@@ -175,6 +175,9 @@ def main(args, ITE=0):
             else:
                 original_initialization(mask, initial_state_dict)
             optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=1e-4)
+            if args.schedule_lr:
+                lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+                               optimizer, patience=args.lr_patience, factor=0.7)
         print(f"\n--- Pruning Level [{ITE}:{_ite}/{ITERATION}]: ---")
 
         # Print the table of Nonzeros in each layer
@@ -193,6 +196,10 @@ def main(args, ITE=0):
             if iter_ % args.valid_freq == 0:
                 accuracy, val_loss, topk_accuracy = test(model, test_loader, criterion)
                 wandb.log({'top1 acc (%)':accuracy, topk_name:topk_accuracy, 'val loss':val_loss})
+                
+                # Update lr scheduler
+                if args.schedule_lr:
+                    lr_scheduler.step(val_loss)
 
                 # Save Weights
                 if accuracy > best_accuracy:
@@ -533,6 +540,8 @@ if __name__=="__main__":
     parser.add_argument('--multi_gpu_selection', default='02', type=str, help='indicate which gpus to use. 02 means 0 and 2. (default: 02)')
     parser.add_argument('--multi_gpu', action='store_true', default=False, help='use multiple GPUs to train (default: False)')
     parser.add_argument('--tqdm', action='store_true', default=False, help='use tqdm (default: False)')
+    parser.add_argument('--schedule_lr', action='store_true', default=False, help='use lr scheduler (default: False)')
+    parser.add_argument('--lr_patience', default=3, type=int, help='how many epochs before decreasing lr (default: 3)')
 
     
     args = parser.parse_args()
