@@ -380,7 +380,8 @@ def test(model, test_loader, criterion):
             data, target = data.to(device), target.to(device)
             output = model(data)
             num_correct_k += get_topk(output, target, k=args.topk)
-            test_loss += criterion(output, target, reduction='sum').item()  # sum up batch loss
+            #test_loss += criterion(output, target, reduction='sum').item()  # sum up batch loss
+            test_loss += criterion(output, target).item()
             pred = output.data.max(1, keepdim=True)[1]  # get the index of the max log-probability
             correct += pred.eq(target.data.view_as(pred)).sum().item()
         test_loss /= len(test_loader.dataset)
