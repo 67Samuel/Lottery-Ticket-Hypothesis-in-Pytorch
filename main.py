@@ -214,7 +214,7 @@ def main(args, ITE=0):
                 # Call early stopper
                 if best_accuracy > 30:
                     if args.early_stopping:
-                        early_stopper(val_loss=val_loss, model=model)
+                        early_stopper(val_loss=loss, model=model)
                         if early_stopper.early_stop == True:
                             break
                         #if late_early_stopping:
