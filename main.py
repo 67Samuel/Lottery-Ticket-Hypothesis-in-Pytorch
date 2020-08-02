@@ -140,12 +140,6 @@ def main(args, ITE=0):
         #late_early_stopping=False
 
     for _ite in range(args.start_iter, ITERATION):
-        if args.early_stopping:
-            if (early_stopper.early_stop == True):
-                break
-            #if late_early_stopping:
-            #    if (late_early_stopper.early_stop == True):
-            #        break
         if not _ite == 0:
             prune_by_percentile(args.prune_percent, resample=resample, reinit=reinit)
             if reinit:
@@ -191,6 +185,12 @@ def main(args, ITE=0):
 
         wandb.log({'prune percent':args.prune_percent, 'prune iterations':args.prune_iterations})
         for iter_ in pbar:
+            if args.early_stopping:
+                if (early_stopper.early_stop == True):
+                    break
+                #if late_early_stopping:
+                #    if (late_early_stopper.early_stop == True):
+                #        break
 
             # Frequency for Testing
             if iter_ % args.valid_freq == 0:
