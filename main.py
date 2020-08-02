@@ -135,11 +135,10 @@ def main(args, ITE=0):
     all_accuracy = np.zeros(args.end_iter,float)
     topk_name = f'top{args.topk} acc (%)'
     
-    if args.early_stopping:
-        early_stopper = EarlyStopping(patience=args.esp)
-        #late_early_stopping=False
-
     for _ite in range(args.start_iter, ITERATION):
+        if args.early_stopping:
+            early_stopper = EarlyStopping(patience=args.esp)
+            #late_early_stopping=False
         if not _ite == 0:
             prune_by_percentile(args.prune_percent, resample=resample, reinit=reinit)
             if reinit:
@@ -241,38 +240,41 @@ def main(args, ITE=0):
         percentage_pruned_dict, total_percentage_pruned = percentage_pruned(net, model)
         print(f'Total percentage pruned: {total_percentage_pruned}%')
         wandb.log(percentage_pruned_dict)
-
-        #writer.add_scalar('Accuracy/test', best_accuracy, comp1)
-        bestacc[_ite]=best_accuracy
-
-        # Plotting Loss (Training), Accuracy (Testing), Iteration Curve
-        #NOTE Loss is computed for every iteration while Accuracy is computed only for every {args.valid_freq} iterations. Therefore Accuracy saved is constant during the uncomputed iterations.
-        #NOTE Normalized the accuracy to [0,100] for ease of plotting.
-        plt.plot(np.arange(1,(args.end_iter)+1), 100*(all_loss - np.min(all_loss))/np.ptp(all_loss).astype(float), c="blue", label="Loss") 
-        plt.plot(np.arange(1,(args.end_iter)+1), all_accuracy, c="red", label="Accuracy") 
-        plt.title(f"Loss Vs Accuracy Vs Iterations ({args.dataset},{args.arch_type})") 
-        plt.xlabel("Iterations") 
-        plt.ylabel("Loss and Accuracy") 
-        plt.legend() 
-        plt.grid(color="gray") 
-        utils.checkdir(f"{os.getcwd()}/plots/lt/{args.arch_type}/{args.dataset}/")
-        plt.savefig(f"{os.getcwd()}/plots/lt/{args.arch_type}/{args.dataset}/{args.prune_type}_LossVsAccuracy_{comp1}.png", dpi=1200) 
-        plt.close()
-
-        # Dump Plot values
-        utils.checkdir(f"{os.getcwd()}/dumps/lt/{args.arch_type}/{args.dataset}/")
-        all_loss.dump(f"{os.getcwd()}/dumps/lt/{args.arch_type}/{args.dataset}/{args.prune_type}_all_loss_{comp1}.dat")
-        all_accuracy.dump(f"{os.getcwd()}/dumps/lt/{args.arch_type}/{args.dataset}/{args.prune_type}_all_accuracy_{comp1}.dat")
         
-        # Dumping mask
-        utils.checkdir(f"{os.getcwd()}/dumps/lt/{args.arch_type}/{args.dataset}/")
-        with open(f"{os.getcwd()}/dumps/lt/{args.arch_type}/{args.dataset}/{args.prune_type}_mask_{comp1}.pkl", 'wb') as fp:
-            pickle.dump(mask, fp)
-        
-        # Making variables into 0
-        best_accuracy = 0
-        all_loss = np.zeros(args.end_iter,float)
-        all_accuracy = np.zeros(args.end_iter,float)
+        try:
+            #writer.add_scalar('Accuracy/test', best_accuracy, comp1)
+            bestacc[_ite]=best_accuracy
+
+            # Plotting Loss (Training), Accuracy (Testing), Iteration Curve
+            #NOTE Loss is computed for every iteration while Accuracy is computed only for every {args.valid_freq} iterations. Therefore Accuracy saved is constant during the uncomputed iterations.
+            #NOTE Normalized the accuracy to [0,100] for ease of plotting.
+            plt.plot(np.arange(1,(args.end_iter)+1), 100*(all_loss - np.min(all_loss))/np.ptp(all_loss).astype(float), c="blue", label="Loss") 
+            plt.plot(np.arange(1,(args.end_iter)+1), all_accuracy, c="red", label="Accuracy") 
+            plt.title(f"Loss Vs Accuracy Vs Iterations ({args.dataset},{args.arch_type})") 
+            plt.xlabel("Iterations") 
+            plt.ylabel("Loss and Accuracy") 
+            plt.legend() 
+            plt.grid(color="gray") 
+            utils.checkdir(f"{os.getcwd()}/plots/lt/{args.arch_type}/{args.dataset}/")
+            plt.savefig(f"{os.getcwd()}/plots/lt/{args.arch_type}/{args.dataset}/{args.prune_type}_LossVsAccuracy_{comp1}.png", dpi=1200) 
+            plt.close()
+
+            # Dump Plot values
+            utils.checkdir(f"{os.getcwd()}/dumps/lt/{args.arch_type}/{args.dataset}/")
+            all_loss.dump(f"{os.getcwd()}/dumps/lt/{args.arch_type}/{args.dataset}/{args.prune_type}_all_loss_{comp1}.dat")
+            all_accuracy.dump(f"{os.getcwd()}/dumps/lt/{args.arch_type}/{args.dataset}/{args.prune_type}_all_accuracy_{comp1}.dat")
+
+            # Dumping mask
+            utils.checkdir(f"{os.getcwd()}/dumps/lt/{args.arch_type}/{args.dataset}/")
+            with open(f"{os.getcwd()}/dumps/lt/{args.arch_type}/{args.dataset}/{args.prune_type}_mask_{comp1}.pkl", 'wb') as fp:
+                pickle.dump(mask, fp)
+
+            # Making variables into 0
+            best_accuracy = 0
+            all_loss = np.zeros(args.end_iter,float)
+            all_accuracy = np.zeros(args.end_iter,float)
+        except Exception as e:
+            print(f'post training error: {e}')
 
     # Dumping Values for Plotting
     utils.checkdir(f"{os.getcwd()}/dumps/lt/{args.arch_type}/{args.dataset}/")
