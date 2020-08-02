@@ -244,6 +244,7 @@ def main(args, ITE=0):
         try:
             #writer.add_scalar('Accuracy/test', best_accuracy, comp1)
             bestacc[_ite]=best_accuracy
+            wandb.log({'best accuracy':best_accuracy})
 
             # Plotting Loss (Training), Accuracy (Testing), Iteration Curve
             #NOTE Loss is computed for every iteration while Accuracy is computed only for every {args.valid_freq} iterations. Therefore Accuracy saved is constant during the uncomputed iterations.
