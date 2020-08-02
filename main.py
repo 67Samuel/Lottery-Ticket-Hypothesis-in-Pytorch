@@ -211,12 +211,6 @@ def main(args, ITE=0):
                     best_topk_accuracy = topk_accuracy
                     print(f'New best top{args.topk} accuracy: {topk_accuracy}%')
                     
-                # Call early stopper
-                if best_accuracy > 30:
-                    if args.early_stopping:
-                        early_stopper(val_loss=loss, model=model)
-                        if early_stopper.early_stop == True:
-                            break
                         #if late_early_stopping:
                         #    late_early_stopper(val_loss=val_loss, model=model)
                         #    if late_early_stopper.early_stop == True:
@@ -231,6 +225,13 @@ def main(args, ITE=0):
             wandb.log({'loss':loss, 'epochs':iter_})
             all_loss[iter_] = loss
             all_accuracy[iter_] = accuracy
+            
+            # Call early stopper
+            if best_accuracy > 30:
+                if args.early_stopping:
+                    early_stopper(val_loss=loss, model=model)
+                    if early_stopper.early_stop == True:
+                        break
             
             # Frequency for Printing Accuracy and Loss
             if iter_ % args.print_freq == 0:
