@@ -197,7 +197,7 @@ def main(args, ITE=0):
                 wandb.log({'top1 acc (%)':accuracy, topk_name:topk_accuracy, 'val loss':val_loss})
                 
                 # Update lr scheduler
-                if args.schedule_lr:
+                if args.schedule_lr and not args.schedule_lr_loss:
                     lr_scheduler.step(val_loss)
 
                 # Save Weights
@@ -232,6 +232,9 @@ def main(args, ITE=0):
                     early_stopper(val_loss=loss, model=model)
                     if early_stopper.early_stop == True:
                         break
+                        
+            if args.schedule_lr_loss:
+                lr_scheduler.step(loss)
             
             # Frequency for Printing Accuracy and Loss
             if iter_ % args.print_freq == 0:
@@ -547,6 +550,7 @@ if __name__=="__main__":
     parser.add_argument('--tqdm', action='store_true', default=False, help='use tqdm (default: False)')
     parser.add_argument('--schedule_lr', action='store_true', default=False, help='use lr scheduler (default: False)')
     parser.add_argument('--lr_patience', default=3, type=int, help='how many epochs before decreasing lr (default: 3)')
+    parser.add_argument('--schedule_lr_loss', action='store_true', default=False, help='use lr scheduler step by loss (default: False)')
 
     
     args = parser.parse_args()
