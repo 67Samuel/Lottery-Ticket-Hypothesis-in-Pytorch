@@ -178,6 +178,7 @@ def main(args, ITE=0):
         pbar = tqdm(range(args.end_iter))
 
         for iter_ in pbar:
+            wandb.log({'epochs':iter_})
 
             # Frequency for Testing
             if iter_ % args.valid_freq == 0:
