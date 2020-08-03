@@ -462,6 +462,7 @@ if __name__=="__main__":
     parser.add_argument('--multi_gpu', action='store_true', default=False, help='use multiple GPUs to train (default: False)')
     parser.add_argument('--debug', action='store_true', default=False, help='Turn on general debug (Default=False)')
     parser.add_argument('--run_name', default='test', type=str, help='name of the run, recorded in wandb (default: test)')  
+    parser.add_argument('--schedule_lr', action='store_true', default=False, help='use lr scheduler (default: False)')
 
     
     args = parser.parse_args()
