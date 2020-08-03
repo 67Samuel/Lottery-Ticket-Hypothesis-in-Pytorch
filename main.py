@@ -22,6 +22,8 @@ import pickle
 # Custom Libraries
 import utils
 
+import wandb
+
 # Tensorboard initialization
 #writer = SummaryWriter()
 
@@ -30,6 +32,7 @@ sns.set_style('darkgrid')
 
 # Main
 def main(args, ITE=0):
+    wandb.init(entity="67Samuel", project='Lottery Ticket', name=args.run_name, config={'batch size':args.batch_size, 'lr':args.lr, 'epochs':args.end_iter})
     device = torch.device(f"cuda:{args.gpu}" if torch.cuda.is_available() else "cpu")
     reinit = True if args.prune_type=="reinit" else False
 
@@ -137,6 +140,7 @@ def main(args, ITE=0):
 
 
     for _ite in range(args.start_iter, ITERATION):
+        wandb.log({'iteration':_ite})
         if not _ite == 0:
             prune_by_percentile(args.prune_percent, resample=resample, reinit=reinit)
             if reinit:
@@ -177,16 +181,19 @@ def main(args, ITE=0):
 
             # Frequency for Testing
             if iter_ % args.valid_freq == 0:
-                accuracy = test(model, test_loader, criterion)
+                accuracy, test_loss = test(model, test_loader, criterion)
+                wandb.log({'accuracy':accuracy, 'test loss':test_loss})
 
                 # Save Weights
                 if accuracy > best_accuracy:
+                    wandb.log({'best accuracy':best_accuracy})
                     best_accuracy = accuracy
                     utils.checkdir(f"{os.getcwd()}/saves/{args.arch_type}/{args.dataset}/")
                     torch.save(model,f"{os.getcwd()}/saves/{args.arch_type}/{args.dataset}/{_ite}_model_{args.prune_type}.pth.tar")
 
             # Training
             loss = train(model, train_loader, optimizer, criterion)
+            wandb.log({'loss':loss})
             all_loss[iter_] = loss
             all_accuracy[iter_] = accuracy
             
@@ -284,7 +291,7 @@ def test(model, test_loader, criterion):
             correct += pred.eq(target.data.view_as(pred)).sum().item()
         test_loss /= len(test_loader.dataset)
         accuracy = 100. * correct / len(test_loader.dataset)
-    return accuracy
+    return accuracy, test_loss
 
 # Prune by Percentile module
 def prune_by_percentile(percent, resample=False, reinit=False,**kwargs):
@@ -434,6 +441,7 @@ if __name__=="__main__":
     parser.add_argument('--multi_gpu_selection', default='3210', type=str, help='indicate which gpus to use. 02 means 0 and 2. (default: 3210)')
     parser.add_argument('--multi_gpu', action='store_true', default=False, help='use multiple GPUs to train (default: False)')
     parser.add_argument('--debug', action='store_true', default=False, help='Turn on general debug (Default=False)')
+    parser.add_argument('--run_name', default='test', type=str, help='name of the run, recorded in wandb (default: test)')  
 
     
     args = parser.parse_args()
