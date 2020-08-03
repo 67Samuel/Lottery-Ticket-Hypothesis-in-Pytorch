@@ -34,7 +34,7 @@ def main(args, ITE=0):
     
     wandb.init(entity="67Samuel", project='Lottery Ticket', name=args.run_name, config={'batch size':args.batch_size, 'lr':args.lr, 'epochs':args.end_iter})
     
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda:2" if torch.cuda.is_available() else "cpu")
     reinit = True if args.prune_type=="reinit" else False
 
     # Data Loader
@@ -132,6 +132,8 @@ def main(args, ITE=0):
                 print('='*70)
                 print(e)
                 print('='*70)
+        else:
+            print(f'device count = {torch.cuda.device_count()}')
 
     # Pruning
     # NOTE First Pruning Iteration is of No Compression
@@ -378,7 +380,7 @@ class EarlyStopping:
 # Function for Training
 def train(model, train_loader, optimizer, criterion):
     EPS = 1e-6
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda:2" if torch.cuda.is_available() else "cpu")
     model.train()
     for batch_idx, (imgs, targets) in enumerate(train_loader):
         optimizer.zero_grad()
@@ -400,7 +402,7 @@ def train(model, train_loader, optimizer, criterion):
 
 # Function for Testing
 def test(model, test_loader, criterion):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda:2" if torch.cuda.is_available() else "cpu")
     model.eval()
     test_loss = 0
     correct = 0
