@@ -235,7 +235,7 @@ def main(args, ITE=0):
             all_accuracy[iter_] = accuracy
             
             # Call early stopper
-            if best_accuracy > args.early_stop:
+            if best_accuracy > args.early_stop_percentage:
                 if args.early_stopping:
                     early_stopper(val_loss=loss, model=model)
                     if early_stopper.early_stop == True:
@@ -565,7 +565,7 @@ if __name__=="__main__":
     parser.add_argument('--schedule_lr', action='store_true', default=False, help='use lr scheduler (default: False)')
     parser.add_argument('--lr_patience', default=3, type=int, help='how many epochs before decreasing lr (default: 3)')
     parser.add_argument('--schedule', default='val_loss', type=str, choices=['loss', 'val_loss'], help='choose what param to use for lr_scheduler')
-    parser.add_argument("--early_stop", default=30, type=int, help="Percentage acc to start early stopper at (Default=30")
+    parser.add_argument("--early_stop_percentage", default=30, type=int, help="Percentage acc to start early stopper at (Default=30")
     parser.add_argument('--debug', action='store_true', default=False, help='Turn on general debug (Default=False)')
 
     
