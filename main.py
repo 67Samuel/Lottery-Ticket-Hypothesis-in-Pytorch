@@ -197,10 +197,14 @@ def main(args, ITE=0):
             if iter_ % args.valid_freq == 0:
                 accuracy, val_loss, topk_accuracy = test(model, test_loader, criterion)
                 wandb.log({'top1 acc (%)':accuracy, topk_name:topk_accuracy, 'val loss':val_loss})
+                if args.debug:
+                    print('accuracies and val_loss recorded')
                 
                 # Update lr scheduler
                 if (args.schedule_lr) and (args.schedule == 'val_loss'):
                     lr_scheduler.step(val_loss)
+                    if args.debug:
+                        print('lr_scheduler step with val loss')
 
                 # Save Weights
                 if accuracy > best_accuracy:
@@ -225,15 +229,19 @@ def main(args, ITE=0):
             # Training
             loss = train(model, train_loader, optimizer, criterion)
             wandb.log({'loss':loss, 'epochs':iter_})
+            if args.debug:
+                print('loss and epoch are recorded')
             all_loss[iter_] = loss
             all_accuracy[iter_] = accuracy
             
             # Call early stopper
-            if best_accuracy > 30:
+            if best_accuracy > args.early_stop:
                 if args.early_stopping:
                     early_stopper(val_loss=loss, model=model)
                     if early_stopper.early_stop == True:
                         break
+                if args.debug:
+                    print('early_stopper has been called')
                         
             if (args.schedule_lr) and (args.schedule == 'loss'):
                 lr_scheduler.step(loss)
@@ -247,6 +255,8 @@ def main(args, ITE=0):
         print(f'Total percentage pruned: {total_percentage_pruned}%')
         wandb.log(percentage_pruned_dict)
         wandb.log({'best accuracy':best_accuracy})
+        if args.debug:
+            print('percentage pruned dict and best accuracy has been recorded')
         
         try:
             #writer.add_scalar('Accuracy/test', best_accuracy, comp1)
@@ -553,6 +563,8 @@ if __name__=="__main__":
     parser.add_argument('--schedule_lr', action='store_true', default=False, help='use lr scheduler (default: False)')
     parser.add_argument('--lr_patience', default=3, type=int, help='how many epochs before decreasing lr (default: 3)')
     parser.add_argument('--schedule', default='val_loss', type=str, choices=['loss', 'val_loss'], help='choose what param to use for lr_scheduler')
+    parser.add_argument("--early_stop", default=30, type=int, help="Percentage acc to start early stopper at (Default=30")
+    parser.add_argument('--debug', action='store_true', default=False, help='Turn on general debug (Default=False)')
 
     
     args = parser.parse_args()
