@@ -114,6 +114,7 @@ def main(args, ITE=0):
         print(name, param.size())
         
     # multi GPU
+    print(args.multi_gpu)
     if args.multi_gpu:
         if args.debug:
             print('getting multi gpus')
