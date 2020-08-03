@@ -245,7 +245,9 @@ def main(args, ITE=0):
                         
             if (args.schedule_lr) and (args.schedule == 'loss'):
                 lr_scheduler.step(loss)
-            
+                if args.debug:
+                    print('lr_scheduler step with loss')
+                    
             # Frequency for Printing Accuracy and Loss
             if iter_ % args.print_freq == 0:
                 pbar.set_description(
