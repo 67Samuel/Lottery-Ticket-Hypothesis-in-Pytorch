@@ -118,6 +118,7 @@ def main(args, ITE=0):
     if args.multi_gpu:
         if args.debug:
             print('getting multi gpus')
+            print(torch.cuda.device_count())
         if torch.cuda.device_count() > 1:
             try:
                 ls = []
