@@ -102,7 +102,7 @@ def main(args, ITE=0):
 
     # Optimizer and Loss
     if (args.dataset == "cifar100") or (args.debug):
-        optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, momentum=0.9, weight_decay=5e-4)
+        optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, momentum=0.9, weight_decay=5e-4, reduction='sum')
         if args.schedule_lr:
             lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[60, 120, 160], gamma=0.2) #learning rate decay
     else:
@@ -172,7 +172,12 @@ def main(args, ITE=0):
                 step = 0
             else:
                 original_initialization(mask, initial_state_dict)
-            optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=1e-4)
+            if (args.dataset == "cifar100") or (args.debug):
+                optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, momentum=0.9, weight_decay=5e-4, reduction='sum')
+                if args.schedule_lr:
+                    lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[60, 120, 160], gamma=0.2) #learning rate decay
+            else:
+                optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=1e-4)
         print(f"\n--- Pruning Level [{ITE}:{_ite}/{ITERATION}]: ---")
 
         # Print the table of Nonzeros in each layer
@@ -399,8 +404,8 @@ def test(model, test_loader, criterion):
             data, target = data.to(device), target.to(device)
             output = model(data)
             num_correct_k += get_topk(output, target, k=args.topk)
-            test_loss += criterion(output, target, reduction='sum').item()  # sum up batch loss
-            #test_loss += criterion(output, target).item()
+            #test_loss += criterion(output, target, reduction='sum').item()  # sum up batch loss
+            test_loss += criterion(output, target).item()
             print(criterion(output, target))
             print(type(criterion(output, target)))
             print(criterion(output, target).item())
