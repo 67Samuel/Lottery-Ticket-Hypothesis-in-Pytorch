@@ -101,7 +101,7 @@ def main(args, ITE=0):
     make_mask(model)
 
     # Optimizer and Loss
-    if args.dataset == "cifar100":
+    if (args.dataset == "cifar100") or (args.debug):
         optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, momentum=0.9, weight_decay=5e-4)
         if args.schedule_lr:
             lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[60, 120, 160], gamma=0.2) #learning rate decay
