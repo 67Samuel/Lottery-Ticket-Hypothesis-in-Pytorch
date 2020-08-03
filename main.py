@@ -196,6 +196,7 @@ def main(args, ITE=0):
                 optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, momentum=0.9, weight_decay=5e-4)
                 if args.schedule_lr:
                     lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[60, 120, 160], gamma=0.2) #learning rate decay
+                    wandb.log({'lr':optimizer.param_groups[0]['lr']})
             else:
                 optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=1e-4)
         print(f"\n--- Pruning Level [{ITE}:{_ite}/{ITERATION}]: ---")
