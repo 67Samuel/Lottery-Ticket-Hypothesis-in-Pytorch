@@ -181,7 +181,7 @@ def main(args, ITE=0):
                 for name, param in model.named_parameters():
                     if 'weight' in name:
                         weight_dev = param.device
-                        param.data = torch.from_numpy(param.data.cpu().numpy() * mask[step]).to(weight_dev)
+                        param.data = torch.from_numpy(param.data.cpu().float().numpy() * mask[step]).to(weight_dev)
                         step = step + 1
                 step = 0
             else:
@@ -288,8 +288,8 @@ def train(model, train_loader, optimizer, criterion):
         # Freezing Pruned weights by making their gradients Zero
         for name, p in model.named_parameters():
             if 'weight' in name:
-                tensor = p.data.cpu().numpy()
-                grad_tensor = p.grad.data.cpu().numpy()
+                tensor = p.data.cpu().float().numpy()
+                grad_tensor = p.grad.data.cpu().float().numpy()
                 grad_tensor = np.where(tensor < EPS, 0, grad_tensor)
                 p.grad.data = torch.from_numpy(grad_tensor).to(device)
         optimizer.step()
@@ -325,7 +325,7 @@ def prune_by_percentile(percent, resample=False, reinit=False,**kwargs):
 
             # We do not prune bias term
             if 'weight' in name:
-                tensor = param.data.cpu().numpy()
+                tensor = param.data.cpu().float().numpy()
                 alive = tensor[np.nonzero(tensor)] # flattened array of nonzero values
                 percentile_value = np.percentile(abs(alive), percent)
 
@@ -351,7 +351,7 @@ def make_mask(model):
     step = 0
     for name, param in model.named_parameters(): 
         if 'weight' in name:
-            tensor = param.data.cpu().numpy()
+            tensor = param.data.cpu().float().numpy()
             mask[step] = np.ones_like(tensor)
             step = step + 1
     step = 0
@@ -363,7 +363,7 @@ def original_initialization(mask_temp, initial_state_dict):
     for name, param in model.named_parameters(): 
         if "weight" in name: 
             weight_dev = param.device
-            param.data = torch.from_numpy(mask_temp[step] * initial_state_dict[name].cpu().numpy()).to(weight_dev)
+            param.data = torch.from_numpy(mask_temp[step] * initial_state_dict[name].cpu().float().numpy()).to(weight_dev)
             step = step + 1
         if "bias" in name:
             param.data = initial_state_dict[name]
