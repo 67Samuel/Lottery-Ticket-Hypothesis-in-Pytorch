@@ -102,12 +102,12 @@ def main(args, ITE=0):
 
     # Optimizer and Loss
     if (args.dataset == "cifar100") or (args.debug):
-        optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, momentum=0.9, weight_decay=5e-4, reduction='sum')
+        optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, momentum=0.9, weight_decay=5e-4)
         if args.schedule_lr:
             lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[60, 120, 160], gamma=0.2) #learning rate decay
     else:
         optimizer = torch.optim.Adam(model.parameters(), weight_decay=1e-4)
-    criterion = nn.CrossEntropyLoss() # Default was F.nll_loss
+    criterion = nn.CrossEntropyLoss(reduction='sum') # Default was F.nll_loss
 
     # Layer Looper
     for name, param in model.named_parameters():
@@ -173,7 +173,7 @@ def main(args, ITE=0):
             else:
                 original_initialization(mask, initial_state_dict)
             if (args.dataset == "cifar100") or (args.debug):
-                optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, momentum=0.9, weight_decay=5e-4, reduction='sum')
+                optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, momentum=0.9, weight_decay=5e-4)
                 if args.schedule_lr:
                     lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[60, 120, 160], gamma=0.2) #learning rate decay
             else:
