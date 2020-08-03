@@ -30,7 +30,7 @@ sns.set_style('darkgrid')
 
 # Main
 def main(args, ITE=0):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device(f"cuda:{args.gpu}" if torch.cuda.is_available() else "cpu")
     reinit = True if args.prune_type=="reinit" else False
 
     # Data Loader
@@ -249,7 +249,7 @@ def main(args, ITE=0):
 # Function for Training
 def train(model, train_loader, optimizer, criterion):
     EPS = 1e-6
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device(f"cuda:{args.gpu}" if torch.cuda.is_available() else "cpu")
     model.train()
     for batch_idx, (imgs, targets) in enumerate(train_loader):
         optimizer.zero_grad()
@@ -271,7 +271,7 @@ def train(model, train_loader, optimizer, criterion):
 
 # Function for Testing
 def test(model, test_loader, criterion):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device(f"cuda:{args.gpu}" if torch.cuda.is_available() else "cpu")
     model.eval()
     test_loss = 0
     correct = 0
