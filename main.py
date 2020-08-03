@@ -102,6 +102,27 @@ def main(args, ITE=0):
     # Layer Looper
     for name, param in model.named_parameters():
         print(name, param.size())
+        
+    # multi GPU
+    if args.multi_gpu:
+        if args.debug:
+            print('getting multi gpus')
+            print(torch.cuda.device_count())
+        if torch.cuda.device_count() > 1:
+            try:
+                ls = []
+                for gpu_idx in args.multi_gpu_selection:
+                    ls.append(int(gpu_idx))
+                gpu_ids = ls
+                print("--info--: there are ", torch.cuda.device_count(), "GPUs. Activate GPUs: ", gpu_ids)
+                model = nn.DataParallel(model, device_ids=gpu_ids)
+                print('data parallel initiated')
+            except Exception as e:
+                print('='*70)
+                print(e)
+                print('='*70)
+        else:
+            print(f'device count = {torch.cuda.device_count()}')
 
     # Pruning
     # NOTE First Pruning Iteration is of No Compression
@@ -405,11 +426,14 @@ if __name__=="__main__":
     parser.add_argument("--valid_freq", default=1, type=int)
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--prune_type", default="lt", type=str, help="lt | reinit")
-    parser.add_argument("--gpu", default="0", type=str)
+    parser.add_argument("--gpu", default="3", type=str)
     parser.add_argument("--dataset", default="mnist", type=str, help="mnist | cifar10 | fashionmnist | cifar100")
     parser.add_argument("--arch_type", default="fc1", type=str, help="fc1 | lenet5 | alexnet | vgg16 | resnet18 | densenet121")
     parser.add_argument("--prune_percent", default=10, type=int, help="Pruning percent")
     parser.add_argument("--prune_iterations", default=35, type=int, help="Pruning iterations count")
+    parser.add_argument('--multi_gpu_selection', default='3210', type=str, help='indicate which gpus to use. 02 means 0 and 2. (default: 3210)')
+    parser.add_argument('--multi_gpu', action='store_true', default=False, help='use multiple GPUs to train (default: False)')
+    parser.add_argument('--debug', action='store_true', default=False, help='Turn on general debug (Default=False)')
 
     
     args = parser.parse_args()
