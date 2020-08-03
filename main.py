@@ -115,6 +115,8 @@ def main(args, ITE=0):
         
     # multi GPU
     if args.multi_gpu:
+        if args.debug:
+            print('getting multi gpus')
         if torch.cuda.device_count() > 1:
             try:
                 ls = []
@@ -125,7 +127,9 @@ def main(args, ITE=0):
                 model = nn.DataParallel(model, device_ids=gpu_ids)
                 print('data parallel initiated')
             except Exception as e:
+                print('='*70)
                 print(e)
+                print('='*70)
 
     # Pruning
     # NOTE First Pruning Iteration is of No Compression
