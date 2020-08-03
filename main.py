@@ -107,7 +107,7 @@ def main(args, ITE=0):
             lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[60, 120, 160], gamma=0.2) #learning rate decay
     else:
         optimizer = torch.optim.Adam(model.parameters(), weight_decay=1e-4)
-    criterion = nn.CrossEntropyLoss(reduction='sum') # Default was F.nll_loss
+    criterion = nn.CrossEntropyLoss() # Default was F.nll_loss
 
     # Layer Looper
     for name, param in model.named_parameters():
@@ -412,8 +412,8 @@ def test(model, test_loader, criterion):
             data, target = data.to(device), target.to(device)
             output = model(data)
             num_correct_k += get_topk(output, target, k=args.topk)
-            #test_loss += criterion(output, target, reduction='sum').item()  # sum up batch loss
-            test_loss += criterion(output, target).item()
+            test_loss += F.nll_loss(output, target, reduction='sum').item()  # sum up batch loss
+            #test_loss += criterion(output, target).item()
             #print(criterion(output, target))
             #print(type(criterion(output, target)))
             #print(criterion(output, target).item())
