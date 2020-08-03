@@ -101,7 +101,12 @@ def main(args, ITE=0):
     make_mask(model)
 
     # Optimizer and Loss
-    optimizer = torch.optim.Adam(model.parameters(), weight_decay=1e-4)
+    if args.dataset == "cifar100":
+        optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, momentum=0.9, weight_decay=5e-4)
+        if args.schedule_lr:
+            lr_scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=[60, 120, 160], gamma=0.2) #learning rate decay
+    else:
+        optimizer = torch.optim.Adam(model.parameters(), weight_decay=1e-4)
     criterion = nn.CrossEntropyLoss() # Default was F.nll_loss
 
     # Layer Looper
@@ -168,9 +173,6 @@ def main(args, ITE=0):
             else:
                 original_initialization(mask, initial_state_dict)
             optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=1e-4)
-            if args.schedule_lr:
-                lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-                               optimizer, patience=args.lr_patience, factor=0.7)
         print(f"\n--- Pruning Level [{ITE}:{_ite}/{ITERATION}]: ---")
 
         # Print the table of Nonzeros in each layer
@@ -197,7 +199,7 @@ def main(args, ITE=0):
                 wandb.log({'top1 acc (%)':accuracy, topk_name:topk_accuracy, 'val loss':val_loss})
                 
                 # Update lr scheduler
-                if args.schedule_lr and not args.schedule_lr_loss:
+                if (args.schedule_lr) and (args.schedule == 'val_loss'):
                     lr_scheduler.step(val_loss)
 
                 # Save Weights
@@ -233,7 +235,7 @@ def main(args, ITE=0):
                     if early_stopper.early_stop == True:
                         break
                         
-            if args.schedule_lr_loss:
+            if (args.schedule_lr) and (args.schedule == 'loss'):
                 lr_scheduler.step(loss)
             
             # Frequency for Printing Accuracy and Loss
@@ -244,11 +246,11 @@ def main(args, ITE=0):
         percentage_pruned_dict, total_percentage_pruned = percentage_pruned(net, model)
         print(f'Total percentage pruned: {total_percentage_pruned}%')
         wandb.log(percentage_pruned_dict)
+        wandb.log({'best accuracy':best_accuracy})
         
         try:
             #writer.add_scalar('Accuracy/test', best_accuracy, comp1)
             bestacc[_ite]=best_accuracy
-            wandb.log({'best accuracy':best_accuracy})
 
             # Plotting Loss (Training), Accuracy (Testing), Iteration Curve
             #NOTE Loss is computed for every iteration while Accuracy is computed only for every {args.valid_freq} iterations. Therefore Accuracy saved is constant during the uncomputed iterations.
@@ -550,7 +552,7 @@ if __name__=="__main__":
     parser.add_argument('--tqdm', action='store_true', default=False, help='use tqdm (default: False)')
     parser.add_argument('--schedule_lr', action='store_true', default=False, help='use lr scheduler (default: False)')
     parser.add_argument('--lr_patience', default=3, type=int, help='how many epochs before decreasing lr (default: 3)')
-    parser.add_argument('--schedule_lr_loss', action='store_true', default=False, help='use lr scheduler step by loss (default: False)')
+    parser.add_argument('--schedule', default='val_loss', type=str, choices=['loss', 'val_loss'], help='choose what param to use for lr_scheduler')
 
     
     args = parser.parse_args()
