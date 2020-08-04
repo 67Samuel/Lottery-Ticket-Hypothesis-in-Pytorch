@@ -229,7 +229,8 @@ def main(args, ITE=0):
                     f'Train Epoch: {iter_}/{args.end_iter} Loss: {loss:.6f} Accuracy: {accuracy:.2f}% Best Accuracy: {best_accuracy:.2f}%')       
             wandb.log({'lr':optimizer.param_groups[0]['lr']})
             
-            lr_scheduler.step(iter_)
+            if args.schedule_lr:
+                lr_scheduler.step(iter_)
 
         #writer.add_scalar('Accuracy/test', best_accuracy, comp1)
         bestacc[_ite]=best_accuracy
@@ -284,7 +285,7 @@ def main(args, ITE=0):
    
 # Function for Training
 def train(model, train_loader, optimizer, criterion):
-    EPS = 1e-6
+    EPS = 1e-10
     device = torch.device(f"cuda:{args.gpu}" if torch.cuda.is_available() else "cpu")
     model.train()
     for batch_idx, (imgs, targets) in enumerate(train_loader):
