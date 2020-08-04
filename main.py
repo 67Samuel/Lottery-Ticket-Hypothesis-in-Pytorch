@@ -114,7 +114,7 @@ def main(args, ITE=0):
     if (args.dataset == "cifar100"):
         optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, momentum=0.9, weight_decay=5e-4)
         if args.schedule_lr:
-            lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[60, 120, 160], gamma=0.2) #learning rate decay
+            lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[args.milestone[0], args.milestone[1], args.milestone[2]], gamma=0.2) #learning rate decay
     else:
         optimizer = torch.optim.Adam(model.parameters(), weight_decay=1e-4)
     criterion = nn.CrossEntropyLoss(reduction='sum') # Default was F.nll_loss
@@ -473,6 +473,7 @@ if __name__=="__main__":
     parser.add_argument('--debug', action='store_true', default=False, help='Turn on general debug (Default=False)')
     parser.add_argument('--run_name', default='test', type=str, help='name of the run, recorded in wandb (default: test)')  
     parser.add_argument('--schedule_lr', action='store_true', default=False, help='use lr scheduler (default: False)')
+    parser.add_argument('--milestone', '-ms', nargs='+', type=int, default=[60, 120, 160], help='3 points to decrease lr at (default: [60, 120, 160])')
 
     
     args = parser.parse_args()
