@@ -212,6 +212,14 @@ def main(args, ITE=0):
             # Training
             loss = train(model, train_loader, optimizer, criterion)
             wandb.log({'loss':loss})
+            if loss < 1e-6:
+                lr = optimizer.param_groups[0]['lr']*0.5
+                if args.schedule_lr:
+                    optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9, weight_decay=5e-4)
+                    lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[60, 120, 160], gamma=0.2) #learning rate decay
+                else:
+                    optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=1e-4)
+                
             all_loss[iter_] = loss
             all_accuracy[iter_] = accuracy
             
@@ -220,6 +228,8 @@ def main(args, ITE=0):
                 pbar.set_description(
                     f'Train Epoch: {iter_}/{args.end_iter} Loss: {loss:.6f} Accuracy: {accuracy:.2f}% Best Accuracy: {best_accuracy:.2f}%')       
             wandb.log({'lr':optimizer.param_groups[0]['lr']})
+            
+            lr_scheduler.step(iter_)
 
         #writer.add_scalar('Accuracy/test', best_accuracy, comp1)
         bestacc[_ite]=best_accuracy
@@ -445,7 +455,7 @@ if __name__=="__main__":
     
     # Arguement Parser
     parser = argparse.ArgumentParser()
-    parser.add_argument("--lr",default= 1.2e-3, type=float, help="Learning rate")
+    parser.add_argument("--lr",default= 0.1, type=float, help="Learning rate")
     parser.add_argument("--batch_size", default=60, type=int)
     parser.add_argument("--start_iter", default=0, type=int)
     parser.add_argument("--end_iter", default=100, type=int)
