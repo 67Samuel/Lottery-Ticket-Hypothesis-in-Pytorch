@@ -230,7 +230,10 @@ def main(args, ITE=0):
             wandb.log({'lr':optimizer.param_groups[0]['lr']})
             
             if args.schedule_lr:
-                lr_scheduler.step(iter_)
+                try:
+                    lr_scheduler.step(iter_)
+                except Exception as e:
+                    pass
 
         #writer.add_scalar('Accuracy/test', best_accuracy, comp1)
         bestacc[_ite]=best_accuracy
