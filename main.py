@@ -18,6 +18,7 @@ import torchvision.utils as vutils
 import seaborn as sns
 import torch.nn.init as init
 import pickle
+import math
 
 # Custom Libraries
 import utils
@@ -320,7 +321,7 @@ def test(model, test_loader, criterion):
             data, target = data.to(device), target.to(device)
             output = model(data)
             #output = torch.exp(output)
-            output = log(abs(output))
+            output = math.log2(abs(output))
             test_loss += F.nll_loss(output, target, reduction='sum').item()  # sum up batch loss
             pred = output.data.max(1, keepdim=True)[1]  # get the index of the max log-probability
             correct += pred.eq(target.data.view_as(pred)).sum().item()
