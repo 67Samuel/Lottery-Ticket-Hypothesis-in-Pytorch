@@ -187,7 +187,13 @@ def main(args, ITE=0):
                 step = 0
             else:
                 original_initialization(mask, initial_state_dict)
-            optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=1e-4)
+                if (args.dataset == "cifar100"):
+                    optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, momentum=0.9, weight_decay=5e-4)
+                    if args.schedule_lr:
+                        lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[args.milestone[0], args.milestone[1], args.milestone[2]], gamma=0.2) #learning rate decay
+                else:
+                    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=1e-4)
+                criterion = nn.CrossEntropyLoss(reduction='sum') # Default was F.nll_loss
         print(f"\n--- Pruning Level [{ITE}:{_ite}/{ITERATION}]: ---")
 
         # Print the table of Nonzeros in each layer
