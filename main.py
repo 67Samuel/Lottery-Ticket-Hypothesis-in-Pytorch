@@ -13,7 +13,7 @@ import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 import matplotlib.pyplot as plt
 import os
-from tensorboardX import SummaryWriter
+#from tensorboardX import SummaryWriter
 import torchvision.utils as vutils
 import seaborn as sns
 import torch.nn.init as init
@@ -21,15 +21,17 @@ import pickle
 
 # Custom Libraries
 import utils
+import wandb
 
 # Tensorboard initialization
-writer = SummaryWriter()
+#writer = SummaryWriter()
 
 # Plotting Style
 sns.set_style('darkgrid')
 
 # Main
 def main(args, ITE=0):
+    wandb.init(entity="67Samuel", project='Lottery Ticket', name=args.run_name, config={'batch size':args.batch_size, 'lr':args.lr, 'epochs':args.end_iter})
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     reinit = True if args.prune_type=="reinit" else False
 
@@ -116,6 +118,7 @@ def main(args, ITE=0):
 
 
     for _ite in range(args.start_iter, ITERATION):
+        wandb.log({'iteration':_ite})
         if not _ite == 0:
             prune_by_percentile(args.prune_percent, resample=resample, reinit=reinit)
             if reinit:
@@ -153,28 +156,33 @@ def main(args, ITE=0):
         pbar = tqdm(range(args.end_iter))
 
         for iter_ in pbar:
+            wandb.log({'epochs':iter_})
 
             # Frequency for Testing
             if iter_ % args.valid_freq == 0:
                 accuracy = test(model, test_loader, criterion)
+                wandb.log({'accuracy':accuracy, 'test loss':test_loss})
 
                 # Save Weights
                 if accuracy > best_accuracy:
                     best_accuracy = accuracy
+                    wandb.log({'best accuracy':best_accuracy})
                     utils.checkdir(f"{os.getcwd()}/saves/{args.arch_type}/{args.dataset}/")
                     torch.save(model,f"{os.getcwd()}/saves/{args.arch_type}/{args.dataset}/{_ite}_model_{args.prune_type}.pth.tar")
 
             # Training
             loss = train(model, train_loader, optimizer, criterion)
+            wandb.log({'loss':loss})
             all_loss[iter_] = loss
             all_accuracy[iter_] = accuracy
             
             # Frequency for Printing Accuracy and Loss
             if iter_ % args.print_freq == 0:
                 pbar.set_description(
-                    f'Train Epoch: {iter_}/{args.end_iter} Loss: {loss:.6f} Accuracy: {accuracy:.2f}% Best Accuracy: {best_accuracy:.2f}%')       
+                    f'Train Epoch: {iter_}/{args.end_iter} Loss: {loss:.6f} Accuracy: {accuracy:.2f}% Best Accuracy: {best_accuracy:.2f}%')    
+            wandb.log({'lr':optimizer.param_groups[0]['lr']})
 
-        writer.add_scalar('Accuracy/test', best_accuracy, comp1)
+        #writer.add_scalar('Accuracy/test', best_accuracy, comp1)
         bestacc[_ite]=best_accuracy
 
         # Plotting Loss (Training), Accuracy (Testing), Iteration Curve
@@ -410,6 +418,7 @@ if __name__=="__main__":
     parser.add_argument("--arch_type", default="fc1", type=str, help="fc1 | lenet5 | alexnet | vgg16 | resnet18 | densenet121")
     parser.add_argument("--prune_percent", default=10, type=int, help="Pruning percent")
     parser.add_argument("--prune_iterations", default=35, type=int, help="Pruning iterations count")
+    parser.add_argument('--run_name', default='test', type=str, help='name of the run, recorded in wandb (default: test)')  
 
     
     args = parser.parse_args()
