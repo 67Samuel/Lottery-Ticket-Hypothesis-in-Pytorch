@@ -211,8 +211,8 @@ def main(args, ITE=0):
 
                 # Save Weights
                 if accuracy > best_accuracy:
-                    wandb.log({'best accuracy':best_accuracy})
                     best_accuracy = accuracy
+                    wandb.log({'best accuracy':best_accuracy})
                     utils.checkdir(f"{os.getcwd()}/saves/{args.arch_type}/{args.dataset}/")
                     torch.save(model,f"{os.getcwd()}/saves/{args.arch_type}/{args.dataset}/{_ite}_model_{args.prune_type}.pth.tar")
 
@@ -303,6 +303,8 @@ def train(model, train_loader, optimizer, criterion):
         #imgs, targets = next(train_loader)
         imgs, targets = imgs.to(device), targets.to(device)
         output = model(imgs)
+        if args.debug:
+            print(f"train output: {output}")
         train_loss = criterion(output, targets)
         train_loss.backward()
 
@@ -326,9 +328,16 @@ def test(model, test_loader, criterion):
         for data, target in test_loader:
             data, target = data.to(device), target.to(device)
             output = model(data)
-            test_loss += F.nll_loss(output, target, reduction='sum').item()  # sum up batch loss
+            batch_loss = F.nll_loss(output, target, reduction='sum').item()  # sum up batch loss
+            test_loss += batch_loss
             pred = output.data.max(1, keepdim=True)[1]  # get the index of the max log-probability
+            if args.debug:
+                print(f"test output len: {len(output)}, test output first 10: {output[10]}")
+                print(f"summed up batch loss: {batch_loss}")
+                print(f"pred len: {len(pred)}, pred first 10: {pred[10]}")
             correct += pred.eq(target.data.view_as(pred)).sum().item()
+        if args.debug:
+            print(f"len test loader: {len(test_loader.dataset)}")
         test_loss /= len(test_loader.dataset)
         accuracy = 100. * correct / len(test_loader.dataset)
     return accuracy, test_loss
